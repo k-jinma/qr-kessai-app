@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商品一覧</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; }
     .products { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
@@ -12,6 +13,56 @@
     .product h3 { margin: 10px 0; }
   </style>
 </head>
+<script>
+
+  let serverIP;
+  let serverPort = '3000';
+
+  // サーバーの実際のIPアドレスを取得
+  async function getServerIP() {
+    try {
+      const response = await fetch('/api/server-ip');
+      const data = await response.json();
+      serverIP = data.ip;
+      serverPort = data.port;
+      console.log(`Server IP: ${serverIP}:${serverPort}`);
+    } catch (error) {
+      console.error('IPアドレスの取得に失敗:', error);
+      serverIP = window.location.hostname;
+      serverPort = window.location.port || '3000';
+
+      console.log(`Fallback to local IP: ${serverIP}:${serverPort}`);
+    }
+  }
+
+  // サーバーのIPアドレスを取得してQRコードに使用
+  function generateQRCode(itemName, price) {
+    const encodedItemName = encodeURIComponent(itemName);
+    const purchaseURL = `http://${serverIP}:${serverPort}/purchase?itemName=${encodedItemName}&price=${price}`;
+    console.log('QR URL:', purchaseURL);
+    
+    const qr = new QRious({
+      value: purchaseURL,
+      size: 150
+    });
+    
+    return qr.toDataURL('image/png');
+  }
+  
+  // ページ読み込み時にQRコードを生成
+  document.addEventListener('DOMContentLoaded', async () => {
+    // まずサーバーIPを取得
+    await getServerIP();
+    
+    // QRコードを自動生成して画像に設定
+    // const juiceImg = document.querySelector('.product:first-child img');
+    // juiceImg.src = generateQRCode('ジュース', 150);
+    
+    // const onigiriImg = document.querySelector('.product:last-child img');
+    // onigiriImg.src = generateQRCode('おにぎり', 180);
+  });
+
+</script>
 <body>
   <h1>体験授業ストア</h1>
   <p>スマホでQRコードを読み取って、商品を購入してみよう！</p>

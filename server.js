@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const os = require('os'); // 追加
 
 const app = express();
 const PORT = 3000;
@@ -16,15 +17,16 @@ if (!fs.existsSync(DB_PATH)) {
 
 // ① 決済処理のエンドポイント
 app.get('/purchase', (req, res) => {
+  
   const { itemId, price, itemName } = req.query;
 
-  if (!itemId || !price || !itemName) {
+  if (!price || !itemName) {
     return res.status(400).send('商品情報が不足しています。');
   }
 
   // データベースファイルを読み込む
   const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-
+  
   // 新しい売上データを作成
   const newSale = {
     id: Date.now(), // ユニークなIDとしてタイムスタンプを利用
@@ -98,8 +100,36 @@ app.get('/api/history', (req, res) => {
   res.json(db.sales);
 });
 
+// IPアドレスを取得する関数
+function getLocalIPAddress() {
+  const interfaces = os.networkInterfaces();
+  
+  for (const interfaceName in interfaces) {
+    const networkInterface = interfaces[interfaceName];
+    for (const network of networkInterface) {
+      if (network.family === 'IPv4' && !network.internal) {
+        return network.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+// IPアドレスを取得するAPIエンドポイント
+app.get('/api/server-ip', (req, res) => {
+  const localIP = getLocalIPAddress();
+  res.json({ 
+    ip: localIP, 
+    port: PORT 
+  });
+});
+
+
+
+
 // サーバーを起動
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`サーバーが起動しました。 http://localhost:${PORT}`);
+  const localIP = getLocalIPAddress();
+  console.log(`サーバーが起動しました。 http://${localIP}:${PORT}`);
   console.log('スマホからは、PCのIPアドレスを指定してアクセスしてください。');
 });
