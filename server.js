@@ -15,6 +15,23 @@ if (!fs.existsSync(DB_PATH)) {
   fs.writeFileSync(DB_PATH, JSON.stringify({ sales: [] }), 'utf8');
 }
 
+// データベースを安全に読み込む関数
+function readDatabase() {
+  try {
+    const fileContents = fs.readFileSync(DB_PATH, 'utf8');
+    if (fileContents) {
+      const data = JSON.parse(fileContents);
+      if (data && Array.isArray(data.sales)) {
+        return data;
+      }
+    }
+  } catch (error) {
+    console.error("データベースの読み込みまたはパースに失敗しました:", error);
+  }
+  // ファイルが存在しない、空、またはエラーがある場合は初期状態を返す
+  return { sales: [] };
+}
+
 // ① 決済処理のエンドポイント
 app.get('/purchase', (req, res) => {
   
@@ -25,7 +42,7 @@ app.get('/purchase', (req, res) => {
   }
 
   // データベースファイルを読み込む
-  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+  const db = readDatabase();
   
   // 新しい売上データを作成
   const newSale = {
@@ -96,7 +113,7 @@ res.send(`
 
 // ② 売上履歴を返すエンドポイント
 app.get('/api/history', (req, res) => {
-  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+  const db = readDatabase();
   res.json(db.sales);
 });
 
